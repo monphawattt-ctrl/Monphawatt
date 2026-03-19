@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Ed Pro - สื่อการสอนโดย มนภวัต</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root { --primary-color: #2563eb; --primary-light: #eff6ff; --sidebar-width: 260px; --text-main: #1e293b; --text-muted: #64748b; --bg-body: #f0fdf4; --bg-card: #ffffff; --bg-sidebar: rgba(255, 255, 255, 0.95); --border-color: rgba(0,0,0,0.05); --shadow-soft: 0 20px 40px -15px rgba(0,0,0,0.08); --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.15); }
+        [data-theme="dark"] { --primary-color: #60a5fa; --primary-light: #1e293b; --text-main: #f1f5f9; --text-muted: #94a3b8; --bg-body: #0f172a; --bg-card: #1e293b; --bg-sidebar: rgba(15, 23, 42, 0.95); --border-color: rgba(255,255,255,0.1); --shadow-soft: 0 20px 40px -15px rgba(0,0,0,0.5); --shadow-hover: 0 20px 40px -10px rgba(96, 165, 250, 0.2); }
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; overflow-x: hidden; line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
+        .bg-app { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: linear-gradient(180deg, #bae6fd 0%, #f0fdf4 100%); }
+        [data-theme="dark"] .bg-app { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+        .cloud { position: fixed; background: white; border-radius: 50px; opacity: 0.6; filter: blur(2px); z-index: -1; animation: floatCloud 20s infinite linear; }
+        .cloud-1 { top: 10%; left: -20%; width: 120px; height: 40px; animation-duration: 25s; }
+        .cloud-2 { top: 25%; left: -20%; width: 200px; height: 60px; animation-duration: 35s; animation-delay: 5s; }
+        [data-theme="dark"] .cloud { background: rgba(255,255,255,0.05); }
+        @keyframes floatCloud { 0% { transform: translateX(0); } 100% { transform: translateX(120vw); } }
+        h1, h2, h3, h4, h5, h6 { font-weight: 700; margin-bottom: 1rem; color: var(--text-main); } p, li { line-height: 1.8; margin-bottom: 1.2rem; font-size: 1rem; color: var(--text-muted); }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        #sidebar { width: var(--sidebar-width); height: 100vh; background: var(--bg-sidebar); backdrop-filter: blur(10px); position: fixed; top: 0; left: 0; z-index: 1000; transition: all 0.4s; border-right: 1px solid var(--border-color); box-shadow: 5px 0 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
+        #sidebar.closed { margin-left: calc(var(--sidebar-width) * -1); }
+        .menu-item { padding: 16px 25px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: 0.3s; display: flex; align-items: center; border-radius: 0 12px 12px 0; margin: 5px 15px 5px 0; border-left: 4px solid transparent; }
+        .menu-item:hover { color: var(--primary-color); background: var(--primary-light); transform: translateX(5px); }
+        .menu-item.active { background: var(--primary-light); color: var(--primary-color); border-left: 4px solid var(--primary-color); font-weight: 600; }
+        .menu-item i { width: 35px; font-size: 1.2rem; }
+        #content { margin-left: var(--sidebar-width); transition: all 0.4s; padding: 40px; min-height: 100vh; } #content.full-width { margin-left: 0; }
+        .content-card { background: var(--bg-card); border-radius: 24px; padding: 40px; box-shadow: var(--shadow-soft); margin-bottom: 30px; border: 1px solid var(--border-color); transition: transform 0.3s; overflow: hidden; }
+        .game-btn { display: flex; align-items: center; justify-content: center; gap: 15px; border-radius: 20px; padding: 25px 20px; font-size: 1.4rem; font-weight: 800; color: white; border: none; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 20px rgba(0,0,0,0.1); width: 100%; text-transform: uppercase; letter-spacing: 0.5px; }
+        .game-btn:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 15px 25px rgba(0,0,0,0.2); color: white; }
+        .game-btn i { font-size: 2rem; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 50%; }
+        .btn-red { background: linear-gradient(135deg, #ef4444, #b91c1c); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-green { background: linear-gradient(135deg, #10b981, #047857); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-yellow { background: linear-gradient(135deg, #f59e0b, #b45309); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-purple { background: linear-gradient(135deg, #a855f7, #7e22ce); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-teal { background: linear-gradient(135deg, #14b8a6, #0f766e); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .btn-gradient { background: linear-gradient(135deg, var(--primary-color), #4f46e5); border: none; color: white; transition: all 0.3s ease; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
+        .btn-gradient:hover { transform: translateY(-3px); box-shadow: 0 15px 25px -5px rgba(37, 99, 235, 0.5); color: white; }
+        .theme-switch { cursor: pointer; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; transition: 0.3s; background: var(--bg-card); box-shadow: var(--shadow-soft); color: var(--primary-color); border: 1px solid var(--border-color); }
+        .mode-list-btn { background: var(--bg-body); border: 2px solid var(--border-color); color: var(--text-main); padding: 20px; border-radius: 16px; width: 100%; text-align: left; display: flex; align-items: center; transition: 0.3s; margin-bottom: 15px; }
+        .mode-list-btn:hover { border-color: var(--primary-color); background: var(--primary-light); transform: translateX(5px); }
+        .mode-list-btn i { font-size: 2rem; width: 60px; text-align: center; }
+        .lesson-list-btn { border: none; border-bottom: 1px solid var(--border-color); transition: all 0.2s; background: transparent; cursor: pointer; }
+        .lesson-list-btn:hover { background-color: var(--primary-light); padding-left: 2rem !important; color: var(--primary-color); }
+        .lesson-list-btn:last-child { border-bottom: none; }
+        .lesson-icon { background: #f59e0b; color: white; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.2rem; flex-shrink: 0; }
+        [data-theme="dark"] .lesson-list-btn { color: var(--text-main); border-bottom-color: rgba(255,255,255,0.05); }
+        [data-theme="dark"] .lesson-list-btn:hover { background: rgba(255,255,255,0.05); }
+        .modal-content { background-color: var(--bg-card); color: var(--text-main); border-radius: 24px; overflow: hidden;} .btn-close { filter: invert(var(--invert-val)); } [data-theme="dark"] { --invert-val: 1; }
+        .custom-toast { background-color: #222222 !important; color: #ffffff; border-radius: 12px; box-shadow: 0 15px 30px rgba(0,0,0,0.4); border: 1px solid #333; }
+        .toast-progress { height: 4px; width: 100%; background-color: #74b868; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; transition: width 3s linear; }
+        [data-theme="dark"] .table { color: var(--text-main); } [data-theme="dark"] .table-light { background-color: rgba(255,255,255,0.05); color: var(--text-main); }
+        .rank-badge { font-size: 0.85rem; padding: 6px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .practice-card { background: var(--bg-card); border-radius: 20px; padding: 25px; box-shadow: var(--shadow-soft); border: 1px solid var(--border-color); height: 100%; transition: transform 0.3s; }
+        .practice-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); border-color: var(--primary-light); }
+        .practice-choice { padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-body); margin-bottom: 8px; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: start; line-height: 1.5; }
+        .practice-choice.correct { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #047857; font-weight: 700; }
+        [data-theme="dark"] .practice-choice.correct { color: #34d399; }
+        .poster-card { background: var(--bg-card); border-radius: 20px; padding: 20px; box-shadow: var(--shadow-soft); border: 1px solid var(--border-color); transition: all 0.4s; height: 100%; cursor: pointer; overflow: hidden; }
+        .poster-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-hover); border-color: var(--primary-color); }
+        .poster-img-wrap { width: 100%; height: 250px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; position: relative; background: var(--bg-body); display: flex; align-items: center; justify-content: center;}
+        .poster-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .poster-card:hover .poster-img-wrap img { transform: scale(1.05); }
+        .zoom-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(37, 99, 235, 0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; color: white; font-size: 2rem; border-radius: 12px;}
+        .poster-card:hover .zoom-overlay { opacity: 1; }
+        .poster-title { font-weight: 700; color: var(--text-main); margin-bottom: 10px; font-size: 1.2rem; }
+        .poster-desc { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
+        .content-card ul{padding-left:1.2rem;margin-bottom:1.5rem} .content-card ul li{margin-bottom:0.8rem}
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px;}
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0; }
+        @media print { #sidebar, .theme-switch, .btn, .search-container, .bg-shape, .bg-app, .cloud, #overlay { display: none !important; } #content { margin-left: 0 !important; padding: 0 !important; } body { background: white !important; color: black !important; } .content-card, .practice-card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; } }
+        @media (max-width: 768px) { #sidebar { margin-left: calc(var(--sidebar-width) * -1); } #sidebar.mobile-open { margin-left: 0; } #content { margin-left: 0; padding: 20px 15px; } .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:900; backdrop-filter: blur(4px); } .overlay.active { display: block; } .content-card, .practice-card, .poster-card { padding: 25px 20px; } .game-btn { font-size: 1.2rem; padding: 20px 15px; flex-direction: column; text-align: center; gap: 5px; } .game-btn i { font-size: 1.8rem; padding: 10px; } .poster-img-wrap { height: 200px; } }
+    </style>
+</head>
+<body>
+
+    <div class="bg-app"></div><div class="cloud cloud-1"></div><div class="cloud cloud-2"></div>
+    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+
+    <nav id="sidebar">
+        <div class="p-4 d-flex justify-content-between align-items-center mb-2">
+            <h4 class="fw-bold m-0 d-flex align-items-center" style="color: var(--primary-color); letter-spacing: -0.5px;">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 0.9rem;"><i class="fas fa-traffic-light"></i></div>Traffic Ed
+            </h4>
+            <i class="fas fa-times d-md-none text-muted fs-4" onclick="toggleSidebar()" style="cursor: pointer;"></i>
+        </div>
+        <div class="mt-1 pe-3">
+            <div class="menu-item active" onclick="showSection('landing', this)"><i class="fas fa-home"></i> หน้าแรก</div>
+            <div class="menu-item" onclick="openMediaModal()"><i class="fas fa-chalkboard-teacher"></i> สื่อการสอน</div>
+            <div class="menu-item" onclick="openLessonModal()"><i class="fas fa-book-reader"></i> แนวข้อสอบ</div>
+            <div class="menu-item" onclick="showSection('color-blind', this)"><i class="fas fa-eye"></i> ทดสอบตาบอดสี</div>
+            <div class="menu-item" onclick="showSection('personal', this)"><i class="fas fa-chart-line"></i> สถิติของฉัน</div>
+            <div class="menu-item" onclick="showSection('history', this)"><i class="fas fa-list-alt"></i> ประวัติคะแนนสอบ</div>
+        </div>
+        <div class="mt-auto p-4 text-center">
+            <div id="user-profile" class="p-3 rounded-4 border text-center shadow-sm" style="background: var(--bg-body); display: none;">
+                <div class="mb-2" style="color: var(--primary-color);"><i class="fas fa-user-circle fa-2x"></i></div><small class="d-block" style="color: var(--text-muted);">ยินดีต้อนรับ</small>
+                <strong style="color: var(--text-main);" class="fs-5" id="display-username">...</strong>
+                <div id="sidebar-rank" class="mt-2 mb-3"></div>
+                <button class="btn btn-sm btn-light text-danger rounded-pill w-100 mt-2 border fw-bold" onclick="handleLogout()">ออกจากระบบ</button>
+            </div>
+            <div id="login-prompt" class="p-4 rounded-4 border text-center shadow-sm" style="background: var(--bg-body);">
+                <div class="mb-3 text-muted"><i class="fas fa-user-lock fa-3x"></i></div><p class="small mb-3" style="color: var(--text-muted);">เข้าสู่ระบบเพื่อบันทึกคะแนน</p>
+                <button class="btn btn-gradient btn-sm rounded-pill w-100 py-2" data-bs-toggle="modal" data-bs-target="#authModal">เข้าสู่ระบบ</button>
+            </div>
+            <small class="d-block mt-4 text-muted fw-medium" style="font-size: 0.75rem;"><i class="fas fa-code me-1"></i> Developed by มนภวัต</small>
+        </div>
+    </nav>
+
+    <div id="content">
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-2" data-aos="fade-down">
+            <div class="d-flex align-items-center">
+                <button class="btn shadow-sm border me-3 rounded-3 px-3 py-2 d-lg-none" style="background: var(--bg-card); color: var(--text-main);" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div><small class="d-block text-uppercase fw-bold" style="color: var(--primary-color); font-size: 0.75rem; letter-spacing: 1px;">Current Page</small><h4 class="m-0 fw-bold" id="page-title" style="letter-spacing: -0.5px;">หน้าแรก</h4></div>
+            </div>
+            <button class="theme-switch" onclick="toggleTheme()" title="เปลี่ยนโหมด"><i class="fas fa-moon fs-5" id="theme-icon"></i></button>
+        </div>
+
+        <div id="section-landing" class="page-section active">
+            <div class="text-center mb-5" data-aos="zoom-in">
+                <i class="fas fa-traffic-light fa-4x mb-3" style="color: var(--primary-color); text-shadow: 0 10px 20px rgba(37,99,235,0.2);"></i>
+                <h1 class="display-4 fw-bold" style="letter-spacing: -1px; color: var(--text-main);">Traffic Ed <span class="text-primary">Pro</span></h1>
+                <p class="fs-5 text-muted">ข้อสอบใบขับขี่และสื่อการสอน 2569</p>
+            </div>
+            <div class="row g-4 mx-auto" style="max-width: 950px;">
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="100"><button class="game-btn btn-red" onclick="openQuizModal()"><i class="fas fa-rocket"></i><span>เริ่มสอบ</span></button></div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="200"><button class="game-btn btn-purple" onclick="openMediaModal()"><i class="fas fa-chalkboard-teacher"></i><span>สื่อการสอน</span></button></div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="300"><button class="game-btn btn-green" onclick="openLessonModal()"><i class="fas fa-book-reader"></i><span>แนวข้อสอบ</span></button></div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="400"><button class="game-btn btn-blue" onclick="showSection('color-blind', document.querySelectorAll('.menu-item')[3])"><i class="fas fa-eye"></i><span>ตาบอดสี</span></button></div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="500"><button class="game-btn btn-teal" onclick="showSection('personal', document.querySelectorAll('.menu-item')[4])"><i class="fas fa-chart-line"></i><span>สถิติฉัน</span></button></div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="600"><button class="game-btn btn-yellow" onclick="showSection('history', document.querySelectorAll('.menu-item')[5])"><i class="fas fa-trophy"></i><span>บอร์ดคนเก่ง</span></button></div>
+            </div>
+            <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="700">
+                <p class="small text-muted p-3 bg-white bg-opacity-50 rounded-pill d-inline-block border shadow-sm"><i class="fas fa-info-circle text-primary"></i> เว็บไซต์นี้ให้บริการทดลองข้อสอบเท่านั้น เพื่อเตรียมความพร้อมก่อนสอบจริง</p>
+            </div>
+        </div>
+
+        <div id="section-media-signs" class="page-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom" data-aos="fade-down">
+                <div><span class="badge mb-2 px-3 py-2 rounded-pill" style="background: var(--primary-light); color: var(--primary-color); font-weight: 600;">สื่อการสอน หมวดที่ 1</span><h3 class="fw-bold m-0 text-primary"><i class="fas fa-traffic-light me-2"></i>ป้ายและเครื่องหมายจราจร</h3></div>
+            </div>
+
+            <div class="content-card mb-5" data-aos="fade-up">
+                <h5 class="fw-bold mb-3 text-danger"><i class="fab fa-youtube me-2"></i>วิดีโอความรู้: เครื่องหมายจราจรที่ทุกคนควรรู้</h5>
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/R7s713PxoXY" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+                <div class="mt-4 text-dark" style="color: var(--text-main);">
+                    <h6 class="fw-bold text-primary">เนื้อหาข้อมูลจากวิดีโอ (ฉบับเต็ม):</h6>
+                    <p><strong>ความหมายของเครื่องหมายจราจร:</strong> สัญลักษณ์ที่บังคับใช้ทางจราจร ส่วนใหญ่มีลักษณะเป็นแสงหรือป้าย จุดประสงค์เพื่อบังคับการเคลื่อนตัว การจอด หรือการเตือน รวมไปถึงแนะนำทางจราจร เป็นสิ่งที่ผู้ใช้รถและทุกคนที่ใช้ถนนร่วมกันต้องเรียนรู้</p>
+                    <p><strong>สัญญาณไฟจราจรทั่วไป:</strong> มี 3 สี คือ สีแดงให้หยุดรถ สีเหลืองคือชะลอ และสีเขียวคือไปได้ ติดตั้งตามทางแยกเพื่อควบคุมการจราจร</p>
+                    <p><strong>สัญญาณไฟจราจรพิเศษ:</strong> มีเพียงสีเดียวคือสีเหลืองกะพริบ ตั้งอยู่บริเวณทางแยกที่ไม่มีรถพลุกพล่าน เป็นการเตือนให้ระมัดระวังบริเวณทางแยก หรือเป็นสัญญาณไฟในการใช้ข้างถนนและเปลี่ยนเลน การเคลื่อนตัวรถขึ้นอยู่กับผู้ขับขี่ หากปลอดภัยก็สามารถเคลื่อนตัวไปได้</p>
+                    <p><strong>ประเภทของป้ายจราจรทางบก (3 ประเภท):</strong><br>
+                    1. ป้ายควบคุมการจราจร (ป้ายบังคับ): มีพื้นขาว ขอบสีแดง เช่น ป้ายห้ามเลี้ยวขวา<br>
+                    2. ป้ายเตือน: ลักษณะพื้นเหลือง ขอบดำ เตือนว่ามีอะไรอยู่ข้างหน้า เช่น เวลามีการก่อสร้าง<br>
+                    3. ป้ายเครื่องหมายแนะนำ: ส่วนใหญ่เป็นการแนะนำการเดินทาง เช่น ป้ายทางลัดตามต่างจังหวัด หรือป้ายบอกระยะทาง</p>
+                    <p><strong>เครื่องหมายบนพื้นทางและขอบทางเท้า (2 ประเภท):</strong> 1. ป้ายบังคับที่แสดงตามรูปแบบ 2. ป้ายข้อความหรือสัญลักษณ์</p>
+                    <p><strong>ความหมายของป้ายต่างๆ (เพิ่มเติม):</strong><br>
+                    - <strong>ป้ายหยุด:</strong> หากเจอต้องหยุดรถ เพื่อความปลอดภัย ให้รถขวางทางหรือคนเดินเท้าผ่านไปก่อน เห็นว่าปลอดภัยจึงเคลื่อนออกไป<br>
+                    - <strong>ป้ายให้รถสวนทางมาก่อน:</strong> หากรถสวนทางมาและผ่านไปได้ เราถึงจะเคลื่อนตัวไปอย่างระมัดระวัง<br>
+                    - <strong>ป้ายห้ามแซง:</strong> ส่วนใหญ่พบทางขึ้นลงเขา เพื่อป้องกันอุบัติเหตุจากการแซง<br>
+                    - <strong>ป้ายห้ามเข้า:</strong> ห้ามรถทุกชนิดเข้าไปในเขตที่ตั้งป้ายเด็ดขาด อาจเกิดอุบัติเหตุ<br>
+                    - <strong>ป้ายห้ามกลับรถซ้าย/ขวา:</strong> ห้ามกลับรถเด็ดขาด หากไม่ทำตามอาจเกิดอุบัติเหตุร้ายแรง<br>
+                    - <strong>ป้ายห้ามจอด:</strong> ห้ามจอดบริเวณนี้ แต่สามารถรับส่งคนหรือขนของลงด้วยความรวดเร็ว เพื่อไม่ให้กีดขวางจราจร<br>
+                    - <strong>ป้ายห้ามหยุดรถ:</strong> ห้ามจอดหรือหยุดบริเวณนี้เด็ดขาด มีความผิดตามกฎหมาย<br>
+                    - <strong>ป้ายหยุดตรวจ:</strong> ต้องหยุดให้เจ้าหน้าที่ตำรวจตรวจ หากได้รับอนุญาตถึงเคลื่อนรถออกไปได้<br>
+                    - <strong>ป้ายจำกัดความเร็ว:</strong> ห้ามขับเกินที่กฎหมายกำหนดในป้าย เช่น ห้ามเกิน 50 กม./ชม.<br>
+                    - <strong>ป้ายห้ามรถน้ำหนักเกิน:</strong> ห้ามรถรวมของบรรทุกน้ำหนักเกินกำหนด (เช่น 10 ตัน) เข้าพื้นที่<br>
+                    - <strong>ป้ายห้ามรถกว้าง/สูงเกินกำหนด:</strong> ห้ามรถที่กว้างหรือสูงเกินเมตรที่กำหนดเข้าเขตพื้นที่หรืออุโมงค์<br>
+                    - <strong>ป้ายให้เดินรถทางเดียวไปข้างหน้า:</strong> ต้องขับตรงไปตามทาง ห้ามขับสวนมาเด็ดขาด<br>
+                    - <strong>ป้ายทางโค้งซ้าย/ขวา:</strong> ต้องชะลอความเร็วและขับขี่ด้วยความระมัดระวัง<br>
+                    - <strong>ป้ายทางโค้งรัศมีแคบเลี้ยวซ้าย/ขวา:</strong> ขับเลี้ยวตามป้ายอย่างระมัดระวัง ขับชิดซ้าย/ขวาเพื่อความปลอดภัย<br>
+                    - <strong>ป้ายเตือนทางคดเคี้ยวเริ่มซ้าย/ขวา:</strong> พบตามทางหลวงชนบท ต้องขับรถชิดซ้ายด้วยความระมัดระวัง<br>
+                    - <strong>ป้ายเตือนคนทำงาน/เครื่องจักรกำลังทำงาน:</strong> ต้องขับรถด้วยความระมัดระวัง</p>
+                    <p class="small text-muted mt-3">🙏 ขอขอบคุณข้อมูลและวิดีโอจากช่อง YouTube: United Honda Automobile</p>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 col-lg-4">
+                    <div class="poster-card" onclick="openImageFullscreen('ป้ายบังคับสีเเดง.jpg')">
+                        <div class="poster-img-wrap"><img src="ป้ายบังคับสีเเดง.jpg" onerror="this.src=''; this.parentElement.innerHTML='<div class=\'text-muted small text-center\'><i class=\'fas fa-image fa-2x mb-2 d-block\'></i>รอใส่รูป ป้ายบังคับสีเเดง.jpg</div>';"><div class="zoom-overlay"><i class="fas fa-search-plus"></i></div></div>
+                        <div class="text-center"><h5 class="poster-title text-danger"><i class="fas fa-minus-circle me-2"></i>ป้ายบังคับ (สีแดง)</h5><p class="poster-desc">เป็นเครื่องหมายที่ <strong>ต้องปฏิบัติตามอย่างเคร่งครัด</strong> หากฝ่าฝืนถือว่าผิดกฎหมาย เช่น ห้ามเข้า ห้ามจอด ห้ามเลี้ยว</p></div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="poster-card" onclick="openImageFullscreen('ป้ายบังคับสีนํ้าเงิน.jpg')">
+                        <div class="poster-img-wrap"><img src="ป้ายบังคับสีนํ้าเงิน.jpg" onerror="this.src=''; this.parentElement.innerHTML='<div class=\'text-muted small text-center\'><i class=\'fas fa-image fa-2x mb-2 d-block\'></i>รอใส่รูป ป้ายบังคับสีนํ้าเงิน.jpg</div>';"><div class="zoom-overlay"><i class="fas fa-search-plus"></i></div></div>
+                        <div class="text-center"><h5 class="poster-title" style="color: #1d4ed8;"><i class="fas fa-arrow-circle-right me-2"></i>ป้ายบังคับ (สีน้ำเงิน)</h5><p class="poster-desc">เป็นเครื่องหมายบังคับให้ต้องปฏิบัติเช่นกัน แต่มักจะเป็น <strong>การบังคับทิศทาง</strong> เช่น ให้ชิดซ้าย ให้เลี้ยวซ้าย</p></div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="poster-card" onclick="openImageFullscreen('ป้ายบังคับสีเหลือง.jpg')">
+                        <div class="poster-img-wrap"><img src="ป้ายบังคับสีเหลือง.jpg" onerror="this.src=''; this.parentElement.innerHTML='<div class=\'text-muted small text-center\'><i class=\'fas fa-image fa-2x mb-2 d-block\'></i>รอใส่รูป ป้ายบังคับสีเหลือง.jpg</div>';"><div class="zoom-overlay"><i class="fas fa-search-plus"></i></div></div>
+                        <div class="text-center"><h5 class="poster-title text-warning text-dark"><i class="fas fa-exclamation-triangle me-2"></i>ป้ายเตือน (แผ่นที่ 1)</h5><p class="poster-desc">เตือนให้ผู้ขับขี่ <strong>ระมัดระวังอันตรายข้างหน้า</strong> ส่วนมากเป็นรูปสี่เหลี่ยมข้าวหลามตัด เช่น ทางโค้ง ทางแยก</p></div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="poster-card" onclick="openImageFullscreen('ป้ายบังคับสีเหลือง2.jpg')">
+                        <div class="poster-img-wrap"><img src="ป้ายบังคับสีเหลือง2.jpg" onerror="this.src=''; this.parentElement.innerHTML='<div class=\'text-muted small text-center\'><i class=\'fas fa-image fa-2x mb-2 d-block\'></i>รอใส่รูป ป้ายบังคับสีเหลือง2.jpg</div>';"><div class="zoom-overlay"><i class="fas fa-search-plus"></i></div></div>
+                        <div class="text-center"><h5 class="poster-title text-warning text-dark"><i class="fas fa-exclamation-triangle me-2"></i>ป้ายเตือน (แผ่นที่ 2)</h5><p class="poster-desc">เตือนลักษณะอื่นๆ บนท้องถนน เช่น ผิวทางขรุขระ ทางลื่น ระวังสัตว์ข้ามถนน ผู้ขับขี่ควรลดความเร็วลง</p></div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="poster-card" onclick="openImageFullscreen('ป้ายเเนะนำสีฟ้า.jpg')">
+                        <div class="poster-img-wrap"><img src="ป้ายเเนะนำสีฟ้า.jpg" onerror="this.src=''; this.parentElement.innerHTML='<div class=\'text-muted small text-center\'><i class=\'fas fa-image fa-2x mb-2 d-block\'></i>รอใส่รูป ป้ายเเนะนำสีฟ้า.jpg</div>';"><div class="zoom-overlay"><i class="fas fa-search-plus"></i></div></div>
+                        <div class="text-center"><h5 class="poster-title text-info text-dark"><i class="fas fa-info-circle me-2"></i>ป้ายแนะนำ (สีฟ้า)</h5><p class="poster-desc">ให้ข้อมูลและคำแนะนำแก่ผู้ใช้ทาง เพื่อความสะดวก เช่น ทางด่วน โรงพยาบาล สถานีรถไฟ หรือจุดกลับรถ</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-media-safe" class="page-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom" data-aos="fade-down">
+                <div><span class="badge mb-2 px-3 py-2 rounded-pill" style="background: var(--primary-light); color: var(--primary-color); font-weight: 600;">สื่อการสอน หมวดที่ 3</span><h3 class="fw-bold m-0 text-primary"><i class="fas fa-shield-alt me-2"></i>การขับขี่อย่างปลอดภัย</h3></div>
+            </div>
+
+            <div class="content-card mb-5" data-aos="fade-up">
+                <h5 class="fw-bold mb-3 text-danger"><i class="fab fa-youtube me-2"></i>วิดีโอความรู้: Road safety for Children</h5>
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/gnulVo0GjmE" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+                <div class="mt-4 text-dark" style="color: var(--text-main);">
+                    <h6 class="fw-bold text-primary">เนื้อหาข้อมูลจากวิดีโอ (ฉบับเต็ม):</h6>
+                    <p><strong>การเตรียมพร้อม:</strong> ขึ้นรถแล้วต้องคาดเข็มขัดนิรภัยเป็นอันดับแรก</p>
+                    <p><strong>ป้ายจราจร:</strong> มีไว้เพื่อเตือน แนะนำ สำหรับผู้ใช้รถใช้ถนนทุกประเภท ให้เดินทางถึงจุดหมายอย่างปลอดภัย แบ่งเป็น 3 ประเภท:<br>
+                    1. <strong>ป้ายบังคับ:</strong> บังคับห้ามทำ เพื่อควบคุมให้ผู้ขับขี่ปฏิบัติตามอย่างเคร่งครัด พื้นสีขาว ขอบสีแดง ข้อความสีดำ เช่น ป้ายหยุดก่อนถึงทางรถไฟ หรือป้ายจำกัดความเร็ว (ไม่เกิน 90 กม./ชม.)<br>
+                    2. <strong>ป้ายเตือน:</strong> แจ้งเตือนให้ระมัดระวังและทราบล่วงหน้าว่ามีอะไรอยู่ข้างหน้า มีลักษณะสีเหลืองดำ เช่น ป้ายระวังสัตว์ข้ามถนน ทางโค้ง เขตโรงเรียน ป้ายระวังคนข้ามถนน (เมื่อเห็นต้องเตรียมชะลอรถให้ช้าลง)<br>
+                    3. <strong>ป้ายแนะนำ:</strong> แนะนำข้อมูลการเดินทาง ทิศทาง ให้ผู้ขับขี่ สีจะแตกต่างจากป้ายเตือนและป้ายบังคับ (เช่น สีฟ้าหรือสีเขียว) ตัวอย่างเช่น ป้ายโรงพยาบาล ป้ายทางม้าลาย ป้ายสนามบิน</p>
+                    <p><strong>สัญญาณไฟจราจร:</strong><br>
+                    - สีแดง: ให้หยุดรถทันทีหลังเส้นให้รถหยุด<br>
+                    - สีเหลือง: ให้เตรียมหยุดรถหลังเส้นให้รถหยุด<br>
+                    - สีเขียว: ให้รถไปต่อได้</p>
+                    <p><strong>สัญญาณมือของเจ้าหน้าที่ตำรวจ (กรณีไม่มีไฟจราจร):</strong><br>
+                    - จอดรถห่างจากตำรวจระยะไม่น้อยกว่า 3 เมตร หรือหลังเส้นหยุดรถ<br>
+                    - ตำรวจเหยียดแขนซ้ายออกไปเสมอระดับไหล่: รถที่มาด้านหลังต้องหยุดรถ<br>
+                    - ลดแขนที่เหยียดออกลงและโบกมือไปข้างหน้า: ขับผ่านต่อไปได้<br>
+                    - เหยียดแขนข้างใดข้างหนึ่งเสมอระดับไหล่และตั้งฝ่ามือขึ้น: รถที่มาจากทางด้านที่เหยียดแขนต้องหยุดรถ หากพลิกฝ่ามือโบกผ่านศีรษะไปด้านหลัง แปลว่าขับผ่านไปได้<br>
+                    - เหยียดแขนทั้งสองข้างเสมอระดับไหล่และตั้งฝ่ามือขึ้น: รถที่มาทั้งด้านซ้ายและขวาต้องหยุดรถ<br>
+                    - ยกแขนขวาท่อนล่างตั้งฉากกับแขนท่อนบน: รถที่มาจากด้านหน้าต้องหยุดรถ</p>
+                    <p><strong>สัญญาณนกหวีด:</strong><br>
+                    - เป่านกหวีดเสียงยาว 1 ครั้ง (ปี๊ด...): รถต้องหยุดทันที<br>
+                    - เป่านกหวีดเสียงสั้น 2 ครั้งติดต่อกัน (ปี๊ดๆ): รถผ่านไปได้</p>
+                    <p><strong>การข้ามถนนที่ปลอดภัย:</strong> ต้องจับมือผู้ใหญ่ให้แน่น ห้ามสะบัด มองขวา-ซ้าย-ขวา ให้แน่ใจว่ารถหยุดสนิทแล้วค่อยข้าม ไม่ต้องรีบวิ่ง</p>
+                    <p class="small text-muted mt-3">🙏 ขอขอบคุณข้อมูลและวิดีโอจาก: ศูนย์ฝึกอบรมปฐมพยาบาลและสุขภาพอนามัย สภากาชาดไทย</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-practice-signs" class="page-section" style="display: none;">
+            <div class="mt-2">
+                <div class="d-flex align-items-center mb-3"><h3 class="fw-bold m-0 border-start border-4 border-success ps-3 text-success"> แนวข้อสอบ ป้ายและเครื่องหมายจราจร (พร้อมเฉลย 50 ข้อ)</h3></div>
+                <div class="alert alert-info rounded-4 border-0 shadow-sm d-flex align-items-center p-4 mb-4" style="background-color: #e0f2fe; color: #0369a1;">
+                    <i class="fas fa-info-circle fa-3x me-4 d-none d-sm-block"></i>
+                    <div><strong class="d-block mb-1 fs-5">นี่คือชุดข้อสอบจำลองเพื่ออ่านทบทวน</strong><span class="fs-6">แนวข้อสอบด้านล่างนี้มีไว้เพื่อเป็น <strong>"สื่อการสอนสำหรับอ่านทบทวนความรู้"</strong> เท่านั้น ไม่ใช่โหมดทดสอบจับเวลา หากต้องการทำข้อสอบแบบจับเวลา กรุณาไปที่เมนู <strong class="text-primary"><i class="fas fa-rocket"></i> เริ่มสอบ</strong> (คำตอบที่ถูกต้องจะถูกไฮไลต์เป็นช่องสีเขียว)</span></div>
+                </div>
+                <div class="row g-4 mb-5" id="practice-guide-container"></div>
+            </div>
+        </div>
+
+        <div id="section-placeholder" class="page-section" style="display: none;">
+            <div class="content-card text-center py-5 mt-5 border-0 bg-transparent shadow-none">
+                <i class="fas fa-tools fa-5x mb-4 text-warning"></i>
+                <h2 class="fw-bold text-main">กำลังพัฒนาระบบ</h2>
+                <p class="text-muted fs-5">เนื้อหาในหมวดหมู่นี้กำลังอยู่ระหว่างการรวบรวมข้อมูลและจัดทำ (Coming Soon)</p>
+                <button class="btn btn-outline-primary rounded-pill px-4 mt-3" onclick="showSection('landing', document.querySelectorAll('.menu-item')[0])">กลับหน้าแรก</button>
+            </div>
+        </div>
+
+        <div id="section-color-blind" class="page-section" style="display: none;">
+            <div class="content-card text-center mx-auto" style="max-width: 650px;">
+                <div id="cb-start">
+                    <h2 class="fw-bold mb-3" style="color: var(--primary-color);"><i class="fas fa-eye me-2"></i>ทดสอบตาบอดสี</h2>
+                    <p class="text-muted mb-4">การทดสอบนี้ใช้เพื่อประเมินภาวะตาบอดสีเบื้องต้น ซึ่งเป็นคุณสมบัติสำคัญในการขับขี่รถยนต์บนท้องถนน โดยจะมีแผ่นภาพให้ทดสอบทั้งหมด 4 ข้อ</p>
+                    <button class="btn btn-gradient w-100 py-3 rounded-pill fw-bold fs-5 shadow-sm" onclick="startColorBlindTest()">เริ่มการทดสอบ</button>
+                    <div class="alert alert-warning mt-4 text-start rounded-4 shadow-sm mb-0"><i class="fas fa-exclamation-triangle text-warning fs-4 float-start me-3 mt-1"></i><div><strong>หมายเหตุ:</strong> การทดสอบนี้เป็นการประเมินเบื้องต้นจากหน้าจอเท่านั้น หากคุณมองไม่เห็นตัวเลข หรือเห็นเป็นเลขอื่น แนะนำให้ปรึกษาจักษุแพทย์ครับ</div></div>
+                </div>
+                <div id="cb-play" style="display: none;">
+                    <div class="progress mb-4 rounded-pill shadow-sm" style="height: 8px; background: var(--border-color);"><div id="cb-progress" class="progress-bar rounded-pill" role="progressbar" style="width: 0%; background: linear-gradient(90deg, var(--primary-color), #4f46e5);"></div></div>
+                    <div class="d-flex justify-content-between mb-4 align-items-center"><span class="badge border border-2 px-4 py-2 rounded-pill fs-6" style="background: var(--bg-body); color: var(--text-main);">แผ่นภาพที่ <span id="cb-now" class="text-primary fw-bold fs-5">1</span>/4</span></div>
+                    <div class="mb-4 mx-auto d-flex align-items-center justify-content-center floating-element" style="height: 220px; width: 220px; background: transparent; position: relative;">
+                        <img id="cb-img" src="" class="img-fluid rounded-circle shadow" style="max-height: 200px; width: 200px; object-fit: cover; border: 5px solid var(--border-color);" onerror="this.style.display='none'; document.getElementById('cb-placeholder').style.display='flex';">
+                        <div id="cb-placeholder" style="display:none; flex-direction: column; color: var(--primary-color); font-size: 0.9rem; height: 200px; width: 200px; border-radius: 50%; border: 5px solid var(--border-color); align-items: center; justify-content: center; background: white; position: absolute;"><i class="fas fa-image fa-3x mb-2"></i>รอใส่รูป</div>
+                    </div>
+                    <h3 class="fw-bold mb-4 mt-2" style="color: var(--text-main);">คุณมองเห็นเป็นตัวเลขอะไร?</h3>
+                    <div id="cb-choices" class="d-grid gap-3"></div>
+                </div>
+                <div id="cb-result" style="display: none;">
+                    <h2 class="fw-bold mb-3" style="color: var(--primary-color);"><i class="fas fa-clipboard-check me-2"></i>ผลการทดสอบ</h2>
+                    <div id="cb-evaluation" class="mb-4"></div>
+                    <button class="btn btn-outline-primary rounded-pill px-5 py-2 fw-bold" onclick="document.getElementById('cb-result').style.display='none'; document.getElementById('cb-start').style.display='block';">ทดสอบอีกครั้ง</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-quiz" class="page-section" style="display: none;">
+            <div class="content-card mx-auto text-center" style="max-width: 650px;">
+                <div id="quiz-play" style="display: none;">
+                    <div id="timer-container" style="display: none;">
+                        <div class="d-flex justify-content-between mb-1"><small class="fw-bold text-danger"><i class="fas fa-stopwatch me-1"></i> เวลาที่เหลือ</small><small class="fw-bold text-danger fs-5" id="q-timer">15 วิ</small></div>
+                        <div class="progress mb-4 rounded-pill shadow-sm" style="height: 10px; background: var(--border-color);"><div id="quiz-timer-bar" class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%;"></div></div>
+                    </div>
+                    <div id="normal-progress-container"><div class="progress mb-4 rounded-pill shadow-sm" style="height: 8px; background: var(--border-color);"><div id="quiz-progress" class="progress-bar rounded-pill" role="progressbar" style="width: 0%; background: linear-gradient(90deg, var(--primary-color), #4f46e5);"></div></div></div>
+                    <div class="d-flex justify-content-between mb-4 align-items-center">
+                        <span class="badge border border-2 px-4 py-2 rounded-pill fs-6" style="background: var(--bg-body); color: var(--text-main);">ข้อที่ <span id="q-now" class="text-primary fw-bold fs-5">1</span>/<span id="q-total">50</span></span>
+                        <div class="text-end"><small class="d-block text-uppercase fw-bold text-primary" style="font-size:0.7rem; letter-spacing: 1px;">SCORE</small><span class="fw-bold display-6" style="color: var(--primary-color); line-height: 1;" id="score">0</span></div>
+                    </div>
+                    <div class="mb-4 mx-auto d-flex align-items-center justify-content-center floating-element" style="height: 200px; width: 200px; background: transparent; position: relative;">
+                        <img id="q-img" src="" style="max-height: 100%; width: auto; z-index: 2; position: relative; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.15));" onerror="this.style.display='none'; document.getElementById('q-placeholder').style.display='flex';">
+                        <div id="q-placeholder" style="display:none; flex-direction: column; color: var(--primary-color); font-size: 0.9rem; position: absolute;"><i class="fas fa-image fa-3x mb-2"></i>รอใส่รูป</div>
+                    </div>
+                    <h3 class="fw-bold mb-4 mt-2" id="q-title" style="color: var(--text-main);">ความหมายของป้ายนี้คือ?</h3>
+                    <div id="q-choices" class="d-grid gap-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-review" class="page-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                <div><h3 class="fw-bold m-0 text-primary"><i class="fas fa-clipboard-check me-2"></i>สรุปผลสอบ</h3><p class="text-muted mb-0 mt-1">ทบทวนข้อที่คุณตอบผิด เพื่อจดจำให้แม่นยำขึ้น</p></div>
+                <div class="text-end bg-primary bg-opacity-10 px-4 py-2 rounded-4"><small class="d-block fw-bold text-primary">คะแนนของคุณ</small><h2 class="m-0 fw-bold text-primary" id="review-score-text">0/50</h2></div>
+            </div>
+            <div id="cert-btn-container" class="text-center mb-5" style="display: none;">
+                <div class="alert alert-success d-inline-block rounded-pill px-5 py-3 shadow-sm" style="border: 2px solid #10b981;"><i class="fas fa-award text-warning fs-4 me-2"></i> <strong class="fs-5">ยอดเยี่ยมมาก!</strong> คุณมีเกณฑ์สอบผ่านใบขับขี่</div><br>
+                <button class="btn btn-warning rounded-pill px-5 py-3 shadow-sm fw-bold mt-2" onclick="window.print()"><i class="fas fa-print me-2"></i> พิมพ์ผลการสอบ</button>
+            </div>
+            <div id="review-content" class="mb-5"></div>
+            <div class="text-center print-hide"><button class="btn btn-gradient btn-lg rounded-pill px-5 shadow-sm fw-bold" onclick="showSection('personal', document.querySelectorAll('.menu-item')[4])"><i class="fas fa-chart-line me-2"></i> ดูสถิติการสอบของฉัน</button></div>
+        </div>
+
+        <div id="section-history" class="page-section" style="display: none;">
+            <div class="content-card p-0 overflow-hidden border-0 shadow-sm">
+                <div class="p-4 border-bottom d-flex justify-content-between align-items-center" style="background: var(--bg-card);"><h5 class="m-0 fw-bold"><i class="fas fa-list-alt me-2 text-primary"></i>ประวัติคะแนนสอบของคุณ</h5></div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" style="color: var(--text-main);">
+                        <thead style="background: var(--bg-body);">
+                            <tr><th class="ps-4 py-3" style="color: var(--text-muted); font-weight: 600;">วันที่</th><th class="py-3" style="color: var(--text-muted); font-weight: 600;">ชื่อ</th><th class="py-3 text-center" style="color: var(--text-muted); font-weight: 600;">โหมด</th><th class="text-end pe-4 py-3" style="color: var(--text-muted); font-weight: 600;">คะแนน</th></tr>
+                        </thead>
+                        <tbody id="history-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-personal" class="page-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold m-0"><i class="fas fa-chart-line me-2" style="color: var(--primary-color);"></i>สถิติของฉัน (Personal Progress)</h4>
+                <button class="btn btn-sm btn-outline-primary rounded-pill shadow-sm" onclick="loadPersonalProgress()"><i class="fas fa-sync-alt me-1"></i> อัปเดต</button>
+            </div>
+            <div class="content-card text-center mb-4 border-primary border-2 py-4" style="background: linear-gradient(135deg, var(--primary-light), var(--bg-card));">
+                <h6 class="text-muted mb-2 fw-bold">ยศนักขับของคุณในปัจจุบัน</h6>
+                <div id="my-big-rank" class="mt-2"><span class="badge bg-secondary px-4 py-2 rounded-pill fs-5"><i class="fas fa-question"></i> ยังไม่มีข้อมูล</span></div>
+                <small class="d-block mt-3 text-muted">ยศจะเลื่อนขึ้นตาม "คะแนนเฉลี่ย" ของคุณ (เต็ม 10)</small>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-md-4"><div class="content-card p-4 text-center border-bottom border-4 border-info" style="margin-bottom: 0;"><h6 class="text-muted mb-2 fw-semibold">ฉันสอบไปแล้ว</h6><h2 class="fw-bold mb-0 text-info display-5" id="my-stat-total">0</h2><small class="text-muted">ครั้ง</small></div></div>
+                <div class="col-md-4"><div class="content-card p-4 text-center border-bottom border-4 border-success" style="margin-bottom: 0;"><h6 class="text-muted mb-2 fw-semibold">คะแนนเฉลี่ยของฉัน</h6><h2 class="fw-bold mb-0 text-success display-5" id="my-stat-avg">0</h2><small class="text-muted">คะแนน</small></div></div>
+                <div class="col-md-4"><div class="content-card p-4 text-center border-bottom border-4 border-warning" style="margin-bottom: 0;"><h6 class="text-muted mb-2 fw-semibold">คะแนนที่ดีที่สุด</h6><h2 class="fw-bold mb-0 text-warning display-5" id="my-stat-best">0.0 / 10</h2><small class="text-muted">คะแนน</small></div></div>
+            </div>
+            <div class="content-card p-4 mb-4" style="margin-bottom: 0;"><h6 class="fw-bold mb-4">กราฟพัฒนาการคะแนนของฉัน (Trend)</h6><div style="position: relative; height: 300px; width: 100%;"><canvas id="myTrendChart"></canvas></div></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="imageFullscreenModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-xl"><div class="modal-content bg-transparent border-0 text-center"><img id="fullscreenImg" class="img-fluid rounded-4"><button class="btn btn-light rounded-pill mt-3 mx-auto d-block" data-bs-dismiss="modal" style="width: 100px;">ปิด</button></div></div></div>
+    
+    <div class="modal fade" id="quizModeModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg p-3"><div class="modal-header border-0 pb-0"><h4 class="modal-title fw-bold text-primary w-100 text-center">เลือกโหมดการสอบ</h4><button type="button" class="btn-close position-absolute end-0 top-0 m-4" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body p-4"><button class="mode-list-btn" onclick="startQuiz('normal')"><i class="fas fa-play-circle text-primary"></i><div><h5 class="fw-bold mb-1">จำลองสอบจริง 50 ข้อ</h5><small class="text-muted">โหมดปกติ เหมาะสำหรับทดสอบความรู้</small></div></button><button class="mode-list-btn mb-0" onclick="startQuiz('survival')"><i class="fas fa-skull-crossbones text-danger"></i><div><h5 class="fw-bold mb-1 text-danger">ทดสอบโหมดเอาชีวิตรอด</h5><small class="text-muted">มีเวลาจำกัด ตอบผิด 1 ข้อจบเกม!</small></div></button></div></div></div></div>
+    
+    <div class="modal fade" id="mediaModeModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg overflow-hidden"><div class="modal-header text-white" style="background: var(--primary-color); border-radius: 20px 20px 0 0; padding: 20px;"><h4 class="modal-title fw-bold w-100 text-center m-0">เลือกสื่อการสอน</h4><button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-4" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body p-0"><div class="list-group list-group-flush"><button class="list-group-item list-group-item-action p-4 py-3 d-flex align-items-center lesson-list-btn" onclick="openSpecificMedia('signs')"><span class="lesson-icon me-3" style="background: #a855f7;"><i class="fas fa-traffic-light"></i></span><span class="fs-5 fw-medium">ป้ายและเครื่องหมายจราจร</span></button><button class="list-group-item list-group-item-action p-4 py-3 d-flex align-items-center lesson-list-btn" onclick="openSpecificMedia('safe')"><span class="lesson-icon me-3" style="background: #a855f7;"><i class="fas fa-shield-alt"></i></span><span class="fs-5 fw-medium">การขับขี่อย่างปลอดภัย</span></button><button class="list-group-item list-group-item-action p-4 py-3 d-flex align-items-center lesson-list-btn" onclick="openSpecificMedia('placeholder')"><span class="lesson-icon me-3" style="background: #a855f7;"><i class="fas fa-tools"></i></span><span class="fs-5 fw-medium">หมวดหมู่อื่นๆ (รออัปเดต)</span></button></div></div></div></div></div>
+    
+    <div class="modal fade" id="lessonModeModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg overflow-hidden"><div class="modal-header text-white" style="background: #10b981; border-radius: 20px 20px 0 0; padding: 20px;"><h4 class="modal-title fw-bold w-100 text-center m-0">อ่านแนวข้อสอบ (พร้อมเฉลย)</h4><button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-4" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body p-0"><div class="list-group list-group-flush"><button class="list-group-item list-group-item-action p-4 py-3 d-flex align-items-center lesson-list-btn" onclick="openSpecificLesson('signs')"><span class="lesson-icon me-3" style="background: #10b981;"><i class="fas fa-pen"></i></span><span class="fs-5 fw-medium">แนวข้อสอบ ป้ายจราจร (50 ข้อ)</span></button><button class="list-group-item list-group-item-action p-4 py-3 d-flex align-items-center lesson-list-btn" onclick="openSpecificLesson('placeholder')"><span class="lesson-icon me-3" style="background: #10b981;"><i class="fas fa-tools"></i></span><span class="fs-5 fw-medium">หมวดหมู่อื่นๆ (รออัปเดต)</span></button></div></div></div></div></div>
+    
+    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold text-primary" id="authTitle">เข้าสู่ระบบ</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body p-4"><div class="form-floating mb-3"><input type="text" class="form-control rounded-4 px-4" id="auth-username" placeholder="ชื่อผู้ใช้"><label class="px-4 text-muted">ชื่อผู้ใช้</label></div><div class="form-floating mb-4"><input type="password" class="form-control rounded-4 px-4" id="auth-password" placeholder="รหัสผ่าน"><label class="px-4 text-muted">รหัสผ่าน (6 ตัวขึ้นไป)</label></div><button class="btn btn-gradient w-100 py-3 rounded-pill fw-bold mb-3" id="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button><button class="btn w-100 py-3 rounded-pill fw-bold" id="btn-register" onclick="handleRegister()" style="display: none; background: var(--primary-light); color: var(--primary-color);">สมัครสมาชิกใหม่</button><div class="text-center mt-3"><a href="#" class="text-muted small fw-medium" id="toggle-auth" onclick="toggleAuthMode()">ยังไม่มีบัญชี? สมัครสมาชิกที่นี่</a></div></div></div></div></div>
+
+    <div class="toast-container position-fixed top-0 end-0 p-4" style="z-index: 1060;"><div id="liveToast" class="toast custom-toast border-0"><div class="toast-body d-flex align-items-center py-3 px-4 fs-6"><i id="toast-icon" class="fas fa-check-circle fs-3 me-3" style="color: #74b868;"></i><strong id="toast-message" class="fw-medium">ดำเนินการสำเร็จ</strong><button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast" aria-label="Close"></button></div><div id="toast-progress" class="toast-progress"></div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        AOS.init({ duration: 800, once: true });
+        const firebaseConfig = { apiKey: "AIzaSyAl3U2fiIxhdlwzcJW3qlG0HlK-EqdZptw", authDomain: "traffic-ed-project1.firebaseapp.com", projectId: "traffic-ed-project1", storageBucket: "traffic-ed-project1.firebasestorage.app", messagingSenderId: "985764118252", appId: "1:985764118252:web:85d5c97355deffd33d6fc9" };
+        firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const db = firebase.firestore();
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext; const audioCtx = new AudioContext();
+        function playSFX(t){if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);if(t==='correct'){o.frequency.setValueAtTime(800,audioCtx.currentTime);g.gain.setValueAtTime(0.1,audioCtx.currentTime);o.start();o.stop(audioCtx.currentTime+0.2)}else{o.frequency.setValueAtTime(150,audioCtx.currentTime);g.gain.setValueAtTime(0.1,audioCtx.currentTime);o.start();o.stop(audioCtx.currentTime+0.2)}}
+
+        function showToast(m, s=true) { const e=document.getElementById('liveToast'), t=document.getElementById('toast-message'), i=document.getElementById('toast-icon'), p=document.getElementById('toast-progress'); t.innerText=m; if(s){i.className='fas fa-check-circle fs-3 me-3'; i.style.color='#74b868'; p.style.backgroundColor='#74b868'}else{i.className='fas fa-exclamation-circle fs-3 me-3'; i.style.color='#ff6b6b'; p.style.backgroundColor='#ff6b6b'} const toast=new bootstrap.Toast(e,{delay:3000}); p.style.transition='none'; p.style.width='100%'; toast.show(); setTimeout(()=>{p.style.transition='width 3s linear'; p.style.width='0%'},10); }
+
+        let authModalElement, quizModeModalElement, lessonModeModalElement, mediaModeModalElement, imageFullscreenModalElement; 
+        let isLoginMode = true; let loggedInUser = null;
+        
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('authTitle').innerHTML = isLoginMode ? 'เข้าสู่ระบบ' : 'สมัครสมาชิกใหม่'; document.getElementById('btn-login').style.display = isLoginMode ? 'block' : 'none'; document.getElementById('btn-register').style.display = isLoginMode ? 'none' : 'block'; document.getElementById('toggle-auth').innerText = isLoginMode ? 'ยังไม่มีบัญชี? สมัครสมาชิกที่นี่' : 'มีบัญชีแล้ว? เข้าสู่ระบบที่นี่'; }
+        
+        auth.onAuthStateChanged(user => {
+            if(user) { 
+                loggedInUser = user.email.split('@')[0]; 
+                document.getElementById('login-prompt').style.display = 'none'; 
+                document.getElementById('user-profile').style.display = 'block'; 
+                document.getElementById('display-username').innerText = loggedInUser; 
+                // โหลดข้อมูลทันทีที่เข้าสู่ระบบสำเร็จ
+                loadPersonalProgress(); 
+                loadHistoryRealtime(); 
+            } else { 
+                loggedInUser = null; 
+                document.getElementById('login-prompt').style.display = 'block'; 
+                document.getElementById('user-profile').style.display = 'none'; 
+                if(document.getElementById('section-personal').style.display==='block' || document.getElementById('section-history').style.display==='block') showSection('landing'); 
+            } 
+        });
+
+        function handleRegister() { const u = document.getElementById('auth-username').value.trim(), p = document.getElementById('auth-password').value.trim(); if(!u || p.length < 6) return showToast('กรุณาใส่ชื่อ และรหัสผ่านอย่างน้อย 6 ตัวอักษร', false); auth.createUserWithEmailAndPassword(`${u.toLowerCase()}@traffic.com`, p).then(() => { showToast('สมัครสมาชิกสำเร็จแล้ว', true); authModalElement.hide(); document.getElementById('auth-password').value = ''; }).catch(e => showToast('เกิดข้อผิดพลาด: '+e.message, false)); }
+        function handleLogin() { const u = document.getElementById('auth-username').value.trim(), p = document.getElementById('auth-password').value.trim(); if(!u || !p) return showToast('กรุณากรอกข้อมูลให้ครบถ้วน', false); auth.signInWithEmailAndPassword(`${u.toLowerCase()}@traffic.com`, p).then(() => { showToast('เข้าสู่ระบบสำเร็จ!', true); authModalElement.hide(); document.getElementById('auth-password').value = ''; }).catch(e => showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!', false)); }
+        function handleLogout() { auth.signOut().then(() => showToast('ออกจากระบบเรียบร้อยแล้ว', true)); }
+
+        function toggleTheme() { const body = document.body; const icon = document.getElementById('theme-icon'); if (body.getAttribute('data-theme') === 'dark') { body.removeAttribute('data-theme'); icon.className = 'fas fa-moon fs-5'; localStorage.setItem('theme', 'light'); } else { body.setAttribute('data-theme', 'dark'); icon.className = 'fas fa-sun fs-5'; localStorage.setItem('theme', 'dark'); } }
+        if(localStorage.getItem('theme') === 'dark') toggleTheme();
+        function toggleSidebar() { const sb = document.getElementById('sidebar'), ct = document.getElementById('content'), ov = document.getElementById('overlay'); if(window.innerWidth <= 768) { sb.classList.toggle('mobile-open'); ov.classList.toggle('active'); } else { sb.classList.toggle('closed'); ct.classList.toggle('full-width'); } }
+
+        function showSection(id, el) {
+            document.querySelectorAll('.page-section').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
+            const target = document.getElementById('section-'+id); target.style.display='block'; setTimeout(() => { target.classList.add('active'); AOS.refresh(); }, 50); 
+            const titles = { 'landing': 'หน้าแรก', 'media-signs': 'สื่อการสอน: ป้ายจราจร', 'media-safe': 'สื่อการสอน: ขับขี่ปลอดภัย', 'practice-signs': 'แนวข้อสอบ: ป้ายจราจร', 'placeholder': 'กำลังพัฒนาระบบ', 'quiz': 'แบบทดสอบ', 'history': 'ประวัติคะแนนสอบ', 'personal': 'สถิติของฉัน', 'review': 'เฉลยข้อสอบ', 'color-blind': 'ทดสอบตาบอดสี' }; document.getElementById('page-title').innerText = titles[id] || 'หน้าแรก';
+            if(el && !el.classList.contains('w-100') && !el.classList.contains('btn') && !el.classList.contains('game-btn')) { document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); el.classList.add('active'); }
+            if(window.innerWidth<=768 && el && !el.classList.contains('w-100') && !el.classList.contains('game-btn')) toggleSidebar();
+            
+            // โหลดข้อมูลเมื่อเปิดหน้าสถิติหรือประวัติ
+            if(id==='history') loadHistoryRealtime(); 
+            if(id==='personal') loadPersonalProgress(); 
+            window.scrollTo(0,0);
+        }
+
+        function openImageFullscreen(s) { document.getElementById('fullscreenImg').src = s; imageFullscreenModalElement.show(); }
+        function openMediaModal() { mediaModeModalElement.show(); }
+        function openLessonModal() { lessonModeModalElement.show(); }
+        function openSpecificMedia(t) { mediaModeModalElement.hide(); const menuBtn = document.querySelectorAll('.menu-item')[1]; if(t==='signs') showSection('media-signs', menuBtn); else if(t==='safe') showSection('media-safe', menuBtn); else showSection('placeholder', menuBtn); }
+        function openSpecificLesson(t) { lessonModeModalElement.hide(); const menuBtn = document.querySelectorAll('.menu-item')[2]; if(t==='signs') { showSection('practice-signs', menuBtn); renderPracticeGuide(); } else showSection('placeholder', menuBtn); }
+        function openQuizModal() { if(!loggedInUser) return showToast('กรุณาเข้าสู่ระบบก่อนเริ่มทำแบบทดสอบครับ!', false); quizModeModalElement.show(); }
+
+        const practiceQuestions = [
+            { q: "1.) จากภาพเส้นแบ่งช่องทางบนพื้นถนน หมายความว่าอย่างไร", img: "บท1.jpg", choices: ["ผู้ขับขี่กลับรถได้", "ห้ามผู้ขับขี่แซงเข้าไปในทางเดินรถด้านขวา", "ผู้ขับขี่เลี้ยวขวาได้", "ผู้ขับขี่จอดรถได้"], ans: 1 },
+            { q: "2.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "ป้ายห้ามเลี้ยวซ้าย ขวา.svg", choices: ["สุดเขตบังคับ", "ห้ามเลี้ยวขวา", "ให้ใช้ความเร็ว", "ให้เลี้ยวซ้าย"], ans: 1 },
+            { q: "3.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท3.jpg", choices: ["ขับรถช้าลง และระวังข้างหน้าเป็นสวนสัตว์", "ขับรถช้าลง และระมัดระวังอาจมีสัตว์ข้ามทาง", "ขับรถช้าลง และระวังเด็กนักเรียน", "ขับรถช้าลง และระมัดระวังคนข้ามถนน"], ans: 1 },
+            { q: "4.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท4.jpg", choices: ["ห้ามเดินรถตรงไปทางเดียว", "ให้เดินรถทางเดียวไปทางขวา", "ให้เดินรถไปทางซ้ายได้ทางเดียว", "ห้ามเดินรถไปทางขวา"], ans: 1 },
+            { q: "5.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท5.jpg", choices: ["ห้ามขับรถทุกชนิดเข้าไปในทิศทางที่ติดตั้งป้าย", "ห้ามเฉพาะรถเก๋งเข้าไปในเขตที่ติดตั้งป้าย", "ให้รถเข้าไปได้ในเขตที่ติดตั้งป้าย", "ให้คนเดินเข้าไปในเขตที่ติดตั้งป้าย"], ans: 0 },
+            { q: "6.) เครื่องหมายนี้ หมายความว่าอย่างไร", img: "บท6.jpg", choices: ["ห้ามเลี้ยวซ้ายหรือเลี้ยวขวา", "ให้ขับรถไปทางเดียวด้านซ้าย", "เส้นทึบห้ามผ่าน แต่เส้นประอาจแซงได้เมื่อเห็นว่าปลอดภัย", "ห้ามขับรถตรงไปหรือเลี้ยวขวา"], ans: 2 },
+            { q: "7.) เครื่องหมายนี้ หมายความอย่างไร", img: "500.svg", choices: ["ห้ามใช้เสียงเกิน 50 เดซิเบล ", "ห้ามใช้ความเร็วเกิน 50 กิโลเมตรต่อชั่วโมง", "ให้ใช้น้ำหนักไม่เกิน 50 กิโลกรัม", "ให้ใช้ความเร็วเกิน 50 กิโลเมตรต่อชั่วโมง"], ans: 1 },
+            { q: "8.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท8.jpg", choices: ["ห้ามกลับรถไปทางขวา", "ให้กลับรถไปทางขวา", "ให้ทางแก่รถหรือคนเดินเท้าบนทางขวางหน้าผ่านไปก่อน", "ห้ามกลับรถไปทางซ้าย"], ans: 2 },
+            { q: "9.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "9999.webp", choices: ["ให้ขับรถด้วยความระมัดระวัง ทางข้างหน้าเป็นทางโทตัดกับทางโทรูปตัวที", "ให้ขับรถด้วยความระมัดระวัง ทางข้างหน้าเป็นทางเอกตัดกันรูปตัวที่", "ใขับรถให้ช้าลง และเพิ่มความระมัดระวัง ทางข้างหน้ามีทางโทแยกไปทางซ้าย", "ให้ขับรถด้วยความระมัดระวัง ทางข้างหน้าเป็นทางเอกตัดกันรูปตัววาย"], ans: 2 },
+            { q: "10.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "หิรร่วง.webp", choices: ["ขับรถให้ช้าลง และเพิ่มความระมัดระวังเป็นพิเศษ ทางลงลาดชัน", "ขับรถให้ช้าลง และเพิ่มความระมัดระวังทางข้างหน้าอาจมีหินร่วง", " ขับรถให้ช้าลง และเพิ่มความระมัดระวังเป็นพิเศษ ทางแคบ", "ขับรถให้ช้าลง และเพิ่มความระมัดระวังเป็นพิเศษ ทางขึ้นลาดชัน"], ans: 1 },
+            { q: "11.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท11.jpg", choices: ["ให้เลี้ยวขวา", "ให้เลี้ยวซ้าย", "ห้ามเลี้ยวซ้าย", "ห้ามเลี้ยวขวา"], ans: 2 },
+            { q: "12.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "หยุด2.jpg", choices: ["ต้องหยุดให้รถและคนเดินเท้าผ่านไปก่อน เมื่อปลอดภัยแล้วจึงไปต่อ", "ให้ขับรถไปได้เฉพาะรถเก๋ง เพราะเป็นทางเอก", "ห้ามหยุดรถทุกชนิด", "ให้ลดความเร็วลง และขับต่อไปช้า ๆ"], ans: 0 },
+            { q: "13.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท13.jpg", choices: ["ขับรถให้ช้าลง และระวังทางลงลาดชันให้ใช้เกียร์ว่าง", "ขับรถให้ช้าลง และระวังหินร่วง", "ขับรถให้ช้าลง และปลดเกียร์หรือดับเครื่องทันที", "ขับรถให้ช้าลง และระวังทางขึ้นลาดชัน"], ans: 3 },
+            { q: "14.) เครื่องหมายขอบทางสีขาว-แดง หมายความว่าอะไร", img: "บท14.jpg", choices: ["ห้ามหยุดแต่สามารถจอดรถได้", "ห้ามหยุดห้ามจอดรถทุกชนิด", "ห้ามจอดรถทุกชนิดยกเว้นรถยนต์", "ห้ามจอดแต่หยุดได้ชั่วขณะ"], ans: 1 },
+            { q: "15.) เครื่องหมายนี้หมายความว่าอะไร", img: "วงเวียน_1000x1000.jpg", choices: ["ทางข้างหน้าจะเป็นวงเวียน", "ทางข้างหน้าเป็นทางแยก", "ทางข้างหน้าเป็นทางแคบลง", "ทางข้างหน้ามีทางเอกตัดกัน"], ans: 0 },
+            { q: "16.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท16.jpg", choices: ["ช้าลง ระวังทางร่วมด้านซ้าย", "ช้าลง ระวังรถเข้าจากทางขวา", "ช้าลง ระวังทางเอกตัดกัน", "ช้าลง ระวังทางคู่ข้างหน้า"], ans: 1 },
+            { q: "17.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท17.jpg", choices: ["ช้าลง ชิดซ้าย ทางคดเคี้ยวเริ่มซ้าย", "ช้าลง ชิดซ้าย โค้งกลับเริ่มขวา", "ช้าลง ชิดขวา ทางคดเคี้ยวเริ่มซ้าย", "ช้าลง ชิดซ้าย โค้งกลับเริ่มซ้าย"], ans: 0 },
+            { q: "18.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "ลงลาดัน.avif", choices: ["ช้าลง ทางเบี่ยงซ้าย", "ช้าลง ทางขึ้นลาดชัน", "ช้าลง ทางลงลาดชัน", "ช้าลง สะพานแคบ"], ans: 2 },
+            { q: "19.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท19.jpg", choices: ["ให้ใช้เสียงได้", "ห้ามจอดรถ", "ห้ามใช้เสียง", "ให้หยุดรถ"], ans: 2 },
+            { q: "20.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท20.jpg", choices: ["ชิดซ้าย ทางแคบด้านซ้าย", "ชิดซ้าย ทางคู่มีเกาะ", "ชิดซ้าย ทางแคบด้านขวา", "ชิดซ้าย ทางลงลาดชัน"], ans: 1 },
+            { q: "21.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท21.jpg", choices: ["บริเวณคนข้ามถนน", "เฉพาะคนเดิน", "ห้ามคนผ่าน", "ทางข้าม"], ans: 0 },
+            { q: "22.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท22.jpg", choices: ["ช้าลง ระวังรถสวนบนสะพาน", "ช้าลง ช่องจราจรลดลง", "ช้าลง ทางแคบ", "ช้าลง ทางแคบด้านซ้าย"], ans: 2 },
+            { q: "23.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท23.jpg", choices: ["เพิ่มความระวัง ห้ามเลี้ยวซ้าย", "ขับไปทางขวา ให้เลี้ยวซ้าย", "ขับในช่อง ห้ามแซงหรือคร่อมเส้น", "ช้าลง ให้เลี้ยวขวา"], ans: 2 },
+            { q: "24.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท24.jpg", choices: ["ช้าลง เตรียมหยุดเมื่อมีเครื่องกั้นทางรถไฟ", "ช้าลง ทางรถไฟไม่มีเครื่องกั้น", "ช้าลง สะพานแคบ", "ขับเร็วได้"], ans: 1 },
+            { q: "25.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "สะพานแคบ.jpg", choices: ["ช้าลง ทางลงลาดชัน", "ช้าลง ทางเบี่ยงขวา", "ช้าลง ทางขึ้นลาดชัน", "ช้าลง สะพานแคบ"], ans: 3 },
+            { q: "26.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท26.jpg", choices: ["รถกว้างไม่เกิน 2.50 ม. ผ่านได้", "ทางกว้างเกิน 2.50 ม.", "สูงกว่า 2.50 ม. ผ่านได้", "ทางลอดต่ำกว่า 2.50 ม."], ans: 3 },
+            { q: "27.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท27.jpg", choices: ["ทางโทแยกขวา", "ทางข้างหน้ามีทางโทแยกขวา", "ทางเอกแยกขวา", "ทางเอกแยกซ้าย"], ans: 1 },
+            { q: "28.) เครื่องหมายนี้หมายความว่าอะไร", img: "บท28.jpg", choices: ["ช่องจราจรปิดด้านซ้าย", "ช่องจราจรปิดด้านขวา", "ช่องจราจรลดลงด้านซ้าย", "ช่องจราจรปิดทั้งสองด้าน"], ans: 0 },
+            { q: "29.) เครื่องหมายนี้หมายความว่าอะไร", img: "บท29.jpg", choices: ["ทางแคบทั้งสองด้าน", "ทางแคบด้านขวา", "ทางแคบด้านซ้าย", "ทางกว้างขึ้นทั้งสองด้าน"], ans: 2 },
+            { q: "30.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท30.jpg", choices: ["ให้ชิดซ้าย", "ห้ามชิดซ้าย", "ห้ามชิดขวา", "ให้ชิดขวา"], ans: 0 },
+            { q: "31.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท31.jpg", choices: ["ให้รถจักรยานยนต์ผ่าน", "ห้ามรถจักรยานยนต์ผ่าน", "ให้รถยนต์ทุกชนิดผ่าน", "ห้ามรถยนต์ทุกชนิดผ่าน"], ans: 1 },
+            { q: "32.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท32.jpg", choices: ["ห้ามเลี้ยวซ้ายหรือขวา ห้ามเปลี่ยนช่อง", "ไปทางเดียวซ้าย ห้ามเปลี่ยนช่อง", "ห้ามตรงหรือเลี้ยวขวา ห้ามเปลี่ยนช่อง", "เปลี่ยนช่องหรือแซงได้"], ans: 3 },
+            { q: "33.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท33.jpg", choices: ["ห้ามเลี้ยวซ้ายหรือกลับรถ", "ให้เลี้ยวขวาหรือกลับรถ", "ห้ามเลี้ยวขวาหรือกลับรถ", "ให้เลี้ยวซ้ายหรือกลับรถ"], ans: 0 },
+            { q: "34.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท34.jpg", choices: ["ช้าลง ถ้ามีรถไฟให้หยุดห่างอย่างน้อย 5 ม.", "ขับเร็วปกติ", "ขับเร็วเพราะมีรถไฟผ่าน", "ขับเร็วได้"], ans: 0 },
+            { q: "35.) เครื่องหมายนี้หมายความว่าอะไร", img: "บท35.jpg", choices: ["เขตให้ทาง", "เขตห้ามแซง", "เขตแซงได้", "เขตให้หยุดรถ"], ans: 1 },
+            { q: "36.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท36.jpg", choices: ["ห้ามรถยาวเกินกำหนด", "ให้รถน้ำหนักเกิน 10 ตันผ่าน", "ให้รถกว้างเกินกำหนดผ่าน", "ห้ามรถน้ำหนักเกิน 10 ตันผ่าน"], ans: 3 },
+            { q: "37.) เครื่องหมายนี้หมายความว่าอะไร", img: "บท37.jpg", choices: ["สะพานแคบ", "ทางคดเคี้ยว", "ทางขึ้นลาดชัน", "ทางลงลาดชัน"], ans: 3 },
+            { q: "38.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท38.jpg", choices: ["ห้ามเลี้ยวขวา", "ห้ามเลี้ยวซ้าย", "ให้เลี้ยวขวา", "ให้เลี้ยวซ้าย"], ans: 3 },
+            { q: "39.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท39.jpg", choices: ["ให้รถจักรยานยนต์จอด", "ห้ามล้อเลื่อนลากเข็นจอด", "ห้ามจอด", "ห้ามหยุด"], ans: 2 },
+            { q: "40.) เครื่องหมายนี้หมายความว่าอะไร", img: "บท40.jpg", choices: ["ระวังเครื่องบินบินต่ำ", "ลานจอดรถสนามบิน", "จุดนัดพบสนามบิน", "จุดรับส่งสัมภาระ"], ans: 0 },
+            { q: "41.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท41.jpg", choices: ["ห้ามเลี้ยวซ้าย", "ห้ามเลี้ยวขวา", "ให้เลี้ยวขวา", "ให้เลี้ยวซ้าย"], ans: 2 },
+            { q: "42.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท42.jpg", choices: ["ช้าลงแล้วแซงได้", "ให้หยุดก่อนถึงเส้นแนวหยุด", "ชะลอแล้วเร่งเครื่อง", "ขับเร็ว"], ans: 1 },
+            { q: "43.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท43.jpg", choices: ["ช้าลง ระวังคนงาน", "ช้าลง งานสำรวจทาง", "ช้าลง สำรวจสิ่งก่อสร้าง", "ช้าลง เครื่องจักรทำงาน"], ans: 3 },
+            { q: "44.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "ห้ามตรงไป_1000x1000.jpg", choices: ["เดินรถตรงทางเดียว", "ให้ไปทางซ้าย", "ห้ามเดินรถเข้าไป", "ห้ามตรงไป"], ans: 3 },
+            { q: "45.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท45.jpg", choices: ["เตรียมให้ทาง", "เตรียมเลี้ยวซ้าย", "เตรียมหยุดจอด", "ช้าลง เตรียมหยุดเมื่อถึงป้าย"], ans: 3 },
+            { q: "46.) เครื่องหมายนี้ (เส้นสีขาว) คือเครื่องหมายอะไร", img: "บท46.jpg", choices: ["ให้เลี้ยวรถได้", "ห้ามเลี้ยวรถ", "เส้นชะลอความเร็ว", "ให้จอดรถได้"], ans: 2 },
+            { q: "47.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ควรปฏิบัติอย่างไร", img: "บท47.jpg", choices: ["เพิ่มความระวัง และห้ามแซง", "ช้าลง คร่อมเส้นได้", "ห้ามคร่อมเส้น แต่แซงได้", "ห้ามเปลี่ยนช่องจราจร"], ans: 2 },
+            { q: "48.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท48.jpg", choices: ["ให้หยุดรถก่อน", "แซงได้เลย", "ห้ามแซงขึ้นหน้า", "ให้ทางรถคันอื่นก่อน"], ans: 2 },
+            { q: "49.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท50.jpg", choices: ["ห้ามกลับรถซ้าย", "ให้กลับรถซ้าย", "ห้ามกลับรถขวา", "ให้กลับรถขวา"], ans: 0 },
+            { q: "50.) เมื่อพบเครื่องหมายนี้ ผู้ขับขี่ต้องปฏิบัติอย่างไร", img: "บท49.jpg", choices: ["ให้กลับรถซ้าย", "ให้กลับรถขวา", "ห้ามกลับรถขวา", "ห้ามกลับรถซ้าย"], ans: 2 }
+        ];
+
+        function renderPracticeGuide() {
+            const container = document.getElementById('practice-guide-container'); let html = '';
+            practiceQuestions.forEach((item, index) => {
+                let choicesHtml = '';
+                item.choices.forEach((choice, cIndex) => {
+                    const isCorrect = (cIndex === item.ans);
+                    choicesHtml += `<div class="practice-choice ${isCorrect ? 'correct' : ''}">${isCorrect ? '<i class="fas fa-check-circle me-2 mt-1"></i>' : '<i class="far fa-circle me-2 mt-1 text-muted"></i>'} <span>${choice}</span></div>`;
+                });
+                
+                const imgSrcHtml = item.img 
+                    ? `<img src="${item.img}" style="max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><small style="display:none; color: var(--primary-color); font-size: 0.7rem;"><i class="fas fa-image fa-2x mb-1 d-block"></i>รอใส่รูป</small>` 
+                    : `<small style="color: var(--primary-color); font-size: 0.7rem;"><i class="fas fa-image fa-2x mb-1 d-block"></i>ไม่มีรูปภาพ</small>`;
+                
+                html += `<div class="col-md-6 animate-pop" style="animation-delay: ${(index%20) * 0.03}s"><div class="practice-card"><div class="d-flex align-items-start mb-3 border-bottom pb-3"><div class="me-3 text-center" style="width: 120px; flex-shrink: 0;"><div style="height: 120px; width: 100%; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-body); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.03);">${imgSrcHtml}</div>${item.img ? `<small class="text-muted d-block mt-1" style="font-size: 0.65rem; word-break: break-all;">${item.img}</small>` : ''}</div><div class="flex-grow-1"><h6 class="fw-bold m-0" style="color: var(--text-main); line-height: 1.6; font-size: 1rem;">${item.q}</h6></div></div><div class="d-flex flex-column gap-1 mt-3">${choicesHtml}</div></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        const colorBlindData = [ { img: "16.jpg", correct: "16", choices: ["16", "6", "18", "มองไม่เห็นเลข"] }, { img: "6.jpg", correct: "6", choices: ["8", "6", "5", "มองไม่เห็นเลข"] }, { img: "8.jpg", correct: "8", choices: ["3", "6", "8", "มองไม่เห็นเลข"] }, { img: "2.jpg", correct: "2", choices: ["2", "5", "7", "มองไม่เห็นเลข"] }, { img: "57.jpg", correct: "57", choices: ["35", "57", "52", "มองไม่เห็นเลข"] } ];
+        let cbIdx = 0, cbScore = 0;
+        function startColorBlindTest() { cbIdx = 0; cbScore = 0; document.getElementById('cb-start').style.display = 'none'; document.getElementById('cb-result').style.display = 'none'; document.getElementById('cb-play').style.display = 'block'; loadColorBlindQ(); }
+        function loadColorBlindQ() {
+            const d = colorBlindData[cbIdx]; document.getElementById('cb-now').innerText = cbIdx + 1;
+            const imgEl = document.getElementById('cb-img'); const placeholderEl = document.getElementById('cb-placeholder');
+            imgEl.src = d.img; imgEl.onload = () => { imgEl.style.display = 'block'; placeholderEl.style.display = 'none'; }; imgEl.onerror = () => { imgEl.style.display = 'none'; placeholderEl.style.display = 'flex'; };
+            document.getElementById('cb-progress').style.width = ((cbIdx) / colorBlindData.length) * 100 + '%';
+            let h = ""; d.choices.forEach((c, i) => { h += `<button class="btn btn-outline-primary py-3 rounded-4 shadow-sm text-start ps-4 fw-medium w-100 animate-pop fs-5" style="animation-delay: ${i*0.1}s; margin-bottom: 12px;" onclick="checkColorBlind('${c}')">${c}</button>`; });
+            document.getElementById('cb-choices').innerHTML = h;
+        }
+        function checkColorBlind(choice) { const d = colorBlindData[cbIdx]; if (choice === d.correct) { cbScore++; playSFX('correct'); } else { playSFX('wrong'); } if (++cbIdx < colorBlindData.length) { loadColorBlindQ(); } else { endColorBlindTest(); } }
+        function endColorBlindTest() { document.getElementById('cb-progress').style.width = '100%'; document.getElementById('cb-play').style.display = 'none'; document.getElementById('cb-result').style.display = 'block'; let evalHtml = ''; if (cbScore === colorBlindData.length) { confetti({particleCount:150, spread:70, origin:{y:0.6}}); evalHtml = `<div class="alert alert-success rounded-4 p-4 text-center border-0 shadow-sm"><i class="fas fa-check-circle fa-4x text-success mb-3"></i><h4 class="fw-bold text-success">สายตาปกติ</h4><p class="mb-0 text-dark">คุณตอบถูก ${cbScore} / ${colorBlindData.length} ข้อ ถือว่าไม่มีภาวะตาบอดสี และมีความพร้อมในการขับขี่</p></div>`; } else { evalHtml = `<div class="alert alert-danger rounded-4 p-4 text-center border-0 shadow-sm"><i class="fas fa-exclamation-triangle fa-4x text-danger mb-3"></i><h4 class="fw-bold text-danger">มีความเสี่ยงภาวะตาบอดสี</h4><p class="mb-0 text-dark">คุณตอบถูก ${cbScore} / ${colorBlindData.length} ข้อ อาจมีปัญหาในการแยกแยะสี แนะนำให้ปรึกษาจักษุแพทย์เพื่อตรวจอย่างละเอียดครับ</p></div>`; } document.getElementById('cb-evaluation').innerHTML = evalHtml; }
+
+        let qIdx=0, score=0, currentQuestions = [], totalQ = 10, userAnswers = [], timerInterval, timeLeft=15, quizMode='normal';
+        function shuffleArray(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+        
+        function startQuiz(m) { 
+            quizModeModalElement.hide(); quizMode=m; score=0; qIdx=0; userAnswers=[]; clearInterval(timerInterval);
+            
+            // สุ่มคำถามและสุ่มตำแหน่งตัวเลือก (ช้อยส์) เพื่อไม่ให้ข้อสอบเหมือนเดิมเลย
+            let quizPool = practiceQuestions.map(q => {
+                let shuffledChoices = [...q.choices];
+                let correctAnswerText = shuffledChoices[q.ans];
+                shuffledChoices = shuffleArray(shuffledChoices);
+                let newAnsIdx = shuffledChoices.indexOf(correctAnswerText);
+                return { ...q, choices: shuffledChoices, ans: newAnsIdx };
+            });
+            
+            totalQ = 50; // เปลี่ยนจำนวนข้อสอบให้เป็น 50 ข้อเต็ม
+            currentQuestions = shuffleArray(quizPool).slice(0, totalQ);
+            
+            showSection('quiz'); document.getElementById('quiz-play').style.display='block';
+            document.getElementById('timer-container').style.display = (m==='survival' ? 'block' : 'none');
+            document.getElementById('normal-progress-container').style.display = (m==='normal' ? 'block' : 'none');
+            loadQ(); 
+        }
+
+        function loadQ() {
+            if(quizMode==='survival'){
+                clearInterval(timerInterval); timeLeft=15; document.getElementById('q-timer').innerText=timeLeft+' วิ';
+                document.getElementById('quiz-timer-bar').style.transition='none'; document.getElementById('quiz-timer-bar').style.width='100%';
+                setTimeout(()=> { document.getElementById('quiz-timer-bar').style.transition='width 1s linear'; }, 50);
+                timerInterval = setInterval(()=> { timeLeft--; document.getElementById('q-timer').innerText=timeLeft+' วิ'; document.getElementById('quiz-timer-bar').style.width=(timeLeft/15*100)+'%'; if(timeLeft<=0){ clearInterval(timerInterval); check(-1); } }, 1000);
+            }
+            const d = currentQuestions[qIdx]; document.getElementById('q-now').innerText=qIdx+1; document.getElementById('q-total').innerText=totalQ; document.getElementById('score').innerText=score;
+            
+            const qImg = document.getElementById('q-img');
+            const qPlaceholder = document.getElementById('q-placeholder');
+            if(d.img && d.img !== "") {
+                qImg.src = d.img;
+                qImg.style.display = 'inline-block';
+                qPlaceholder.style.display = 'none';
+            } else {
+                qImg.style.display = 'none';
+                qPlaceholder.style.display = 'flex';
+            }
+            
+            document.getElementById('q-title').innerText=d.q;
+            if(quizMode==='normal') document.getElementById('quiz-progress').style.width=(qIdx/totalQ*100)+'%';
+            let h = ""; d.choices.forEach((c,i)=> { h += `<button class="btn btn-outline-primary py-3 rounded-4 w-100 mb-2 text-start ps-4 fw-medium fs-5" onclick="check(${i})">${c}</button>`; });
+            document.getElementById('q-choices').innerHTML=h;
+        }
+
+        function check(c) {
+            clearInterval(timerInterval); const d=currentQuestions[qIdx], isCorrect=(c===d.ans);
+            if(isCorrect){ score++; playSFX('correct'); } else { playSFX('wrong'); }
+            userAnswers.push({ questionSign: d, userChoiceIdx: c, correctChoiceIdx: d.ans, isCorrect: isCorrect, isTimeout: (c === -1) });
+            if(quizMode==='survival' && !isCorrect) { endQuiz(); return; }
+            if(++qIdx < totalQ) loadQ(); else endQuiz();
+        }
+
+        function endQuiz() {
+            confetti({particleCount:150, spread:70, origin:{y:0.6}});
+            db.collection('exam_history').add({ name: loggedInUser, score: score, total: totalQ, mode: quizMode==='survival'?'เอาชีวิตรอด':'ปกติ', date: new Date().toLocaleString('th-TH'), timestamp: firebase.firestore.FieldValue.serverTimestamp() })
+            .then(()=> { setTimeout(()=> showReviewScreen(), 1000); });
+        }
+
+        function showReviewScreen() {
+            showSection('review'); document.getElementById('review-score-text').innerText=`${score} / ${totalQ}`;
+            document.getElementById('cert-btn-container').style.display = (score>=35 ? 'block' : 'none'); // ผ่านเกณฑ์ 70% ขึ้นไป (35/50)
+            let h = ''; userAnswers.forEach((ans, i)=> {
+                const q=ans.questionSign, isCorrect=ans.isCorrect, userText=ans.isTimeout?"หมดเวลา":q.choices[ans.userChoiceIdx];
+                h += `<div class="content-card mb-4 p-4 border-start border-5 ${isCorrect?'border-success':'border-danger'}"><h6 class="fw-bold mb-3">ข้อที่ ${i+1} ${isCorrect?'<span class="text-success">✅ ตอบถูก</span>':'<span class="text-danger">❌ ตอบผิด</span>'}</h6><p class="mb-2 fw-bold">${q.q}</p><div class="mb-2 text-center bg-light rounded"><img src="${q.img}" style="max-height:100px;"></div><p class="small mb-1 ${isCorrect?'text-success':'text-danger'}">คุณตอบ: ${userText}</p><p class="small text-success fw-bold m-0">เฉลย: ${q.choices[q.ans]}</p></div>`;
+            });
+            document.getElementById('review-content').innerHTML=h;
+        }
+
+        function loadHistoryRealtime() {
+            const t = document.getElementById('history-table');
+            if (!loggedInUser) { t.innerHTML='<tr><td colspan="4" class="text-center py-5 text-muted">กรุณาเข้าสู่ระบบเพื่อดูประวัติการสอบของคุณ</td></tr>'; return; }
+            t.innerHTML='<tr><td colspan="4" class="text-center py-5 text-muted">กำลังดึงข้อมูลประวัติของคุณ...</td></tr>';
+            
+            db.collection('exam_history').where('name', '==', loggedInUser).orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+                if(snapshot.empty) { t.innerHTML='<tr><td colspan="4" class="text-center py-5 text-muted">คุณยังไม่มีประวัติการสอบ รีบไปทำข้อสอบกันเถอะ!</td></tr>'; return; }
+                let html = '';
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const totalScore = d.total ? d.total : 10; 
+                    const modeHtml = d.mode === 'เอาชีวิตรอด' ? `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill"><i class="fas fa-skull me-1"></i> เอาชีวิตรอด</span>` : `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill"><i class="fas fa-play me-1"></i> ปกติ</span>`;
+                    html += `<tr><td class="ps-4 small" style="color:var(--text-muted);">${d.date}</td><td class="fw-medium" style="color: var(--primary-color);">${d.name}</td><td class="text-center">${modeHtml}</td><td class="text-end pe-4 fw-bold" style="color:var(--text-main);">${d.score} / ${totalScore}</td></tr>`;
+                });
+                t.innerHTML = html;
+            }, error => { 
+                console.error(error);
+                t.innerHTML=`<tr><td colspan="4" class="text-center py-5 text-danger">ไม่สามารถดึงข้อมูลได้ โปรดตรวจสอบการเชื่อมต่อ</td></tr>`; 
+            });
+        }
+
+        let myTrendChartInstance = null;
+        function loadPersonalProgress() {
+            if (!loggedInUser) return; 
+            const t = document.getElementById('personal-history-table'); t.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>';
+            db.collection('exam_history').where('name', '==', loggedInUser).orderBy('timestamp', 'asc').get().then(snapshot => {
+                if (snapshot.empty) {
+                    document.getElementById('my-stat-total').innerText = '0'; document.getElementById('my-stat-avg').innerText = '0'; document.getElementById('my-stat-best').innerText = '0.0 / 10';
+                    document.getElementById('sidebar-rank').innerHTML = '<span class="badge bg-secondary rounded-pill rank-badge"><i class="fas fa-user"></i> ผู้เล่นใหม่</span>';
+                    document.getElementById('my-big-rank').innerHTML = '<span class="badge bg-secondary px-4 py-2 rounded-pill fs-5"><i class="fas fa-question"></i> ยังไม่มีข้อมูล</span>';
+                    t.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted">คุณยังไม่เคยทำแบบทดสอบ รีบไปทำข้อสอบกันเถอะ!</td></tr>';
+                    if(myTrendChartInstance) myTrendChartInstance.destroy(); return;
+                }
+                
+                let docs = []; snapshot.forEach(doc => docs.push(doc.data()));
+                let totalTests = docs.length, sumScore = 0, bestScoreRatio = 0, html = '', chartLabels = [], chartData = [];
+                
+                docs.forEach((d, i) => {
+                    const s = d.score || 0; const total = d.total || 10; const scoreRatio = (s / total) * 10; 
+                    sumScore += scoreRatio; if(scoreRatio > bestScoreRatio) bestScoreRatio = scoreRatio;
+                    chartLabels.push(`ครั้งที่ ${i + 1}`); chartData.push(scoreRatio);
+                });
+
+                for(let i = docs.length - 1; i >= 0; i--) {
+                    const d = docs[i]; const s = d.score || 0; const total = d.total || 10;
+                    const modeHtml = d.mode === 'เอาชีวิตรอด' ? `<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><i class="fas fa-skull me-1"></i> เอาชีวิตรอด</span>` : `<span class="badge bg-primary bg-opacity-10 text-primary rounded-pill"><i class="fas fa-play me-1"></i> ปกติ</span>`;
+                    html += `<tr><td class="ps-4 small" style="color:var(--text-muted);">${d.date}</td><td class="text-center">${modeHtml}</td><td class="text-end pe-4 fw-bold" style="color:var(--primary-color);">${s} / ${total}</td></tr>`;
+                }
+
+                let avgScore = sumScore / totalTests; let rankHtml = '';
+                if(avgScore >= 8) { rankHtml = '<span class="badge bg-warning text-dark px-4 py-2 rounded-pill fs-5"><i class="fas fa-crown me-1"></i> เซียนกฎจราจร</span>'; document.getElementById('sidebar-rank').innerHTML = '<span class="badge bg-warning text-dark rounded-pill rank-badge"><i class="fas fa-crown"></i> เซียนกฎจราจร</span>'; } 
+                else if(avgScore >= 5) { rankHtml = '<span class="badge bg-primary px-4 py-2 rounded-pill fs-5"><i class="fas fa-car me-1"></i> นักขับมาตรฐาน</span>'; document.getElementById('sidebar-rank').innerHTML = '<span class="badge bg-primary rounded-pill rank-badge"><i class="fas fa-car"></i> นักขับมาตรฐาน</span>'; } 
+                else { rankHtml = '<span class="badge bg-secondary px-4 py-2 rounded-pill fs-5"><i class="fas fa-baby me-1"></i> มือใหม่หัดขับ</span>'; document.getElementById('sidebar-rank').innerHTML = '<span class="badge bg-secondary rounded-pill rank-badge"><i class="fas fa-baby"></i> มือใหม่หัดขับ</span>'; }
+                
+                document.getElementById('my-big-rank').innerHTML = rankHtml; t.innerHTML = html; document.getElementById('my-stat-total').innerText = totalTests; document.getElementById('my-stat-avg').innerText = avgScore.toFixed(1); document.getElementById('my-stat-best').innerText = bestScoreRatio.toFixed(1) + ' / 10';
+                
+                const ctx = document.getElementById('myTrendChart').getContext('2d'); if (myTrendChartInstance) myTrendChartInstance.destroy(); const isDark = document.body.getAttribute('data-theme') === 'dark'; Chart.defaults.color = isDark ? '#f1f5f9' : '#1e293b';
+                myTrendChartInstance = new Chart(ctx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: 'คะแนนที่ได้ (ฐาน 10)', data: chartData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: '#10b981', pointBorderWidth: 2, pointRadius: 5, fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 10, grid: { color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
+            }).catch(err => { console.error(err); t.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`; });
+        }
+
+        window.onload = () => { 
+            authModalElement = new bootstrap.Modal(document.getElementById('authModal'));
+            quizModeModalElement = new bootstrap.Modal(document.getElementById('quizModeModal'));
+            lessonModeModalElement = new bootstrap.Modal(document.getElementById('lessonModeModal'));
+            mediaModeModalElement = new bootstrap.Modal(document.getElementById('mediaModeModal'));
+            imageFullscreenModalElement = new bootstrap.Modal(document.getElementById('imageFullscreenModal'));
+            
+            renderPracticeGuide(); 
+        };
+    </script>
+</body>
+</html>
